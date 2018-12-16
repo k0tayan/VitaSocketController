@@ -1,5 +1,5 @@
 ### VitaSocketController
-PSVitaのボタン/スティック入力をUDP/IPで指定したIPアドレス/ポートに送ります。
+PSVitaのボタン/スティック入力をUDPで指定したIPアドレス/ポートに送ります。
 
 ### 使い方
 main.c内のIPとPORTを送信先のIPアドレスとポートに変えてください。
