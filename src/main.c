@@ -19,17 +19,19 @@
 
 #define NET_PARAM_MEM_SIZE (1*1024*1024)
 
-/* IP */
-#define IP "192.168.11.3"
+/* dist IP */
+//#define IP "192.168.13.3"
+#define IP "192.168.4.1"
 
-/* PORT */
+/* dist PORT */
 #define PORT 5000
 
-/* BUF LEN */
+/* buffer length */
 #define BUF_LEN 7
 
 static int32_t sfd; /* Socket file descriptor */
 int send(char *buffer);
+int fix(int n);
 int main (int argc, char *argv[]){
 	SceNetSockaddrIn serv_addr; /* server address to send data to */
 	SceNetInitParam net_init_param; /* Net init param structure */
@@ -52,7 +54,7 @@ int main (int argc, char *argv[]){
 
 	sceNetInetPton(SCE_NET_AF_INET, IP, &serv_addr.sin_addr);
 
-	sfd = sceNetSocket("controller", SCE_NET_AF_INET, SCE_NET_SOCK_DGRAM, SCE_NET_IPPROTO_IP);
+	sfd = sceNetSocket("controller", SCE_NET_AF_INET, SCE_NET_SOCK_DGRAM, 0);
 	if (sfd < 0)
 		goto exit;
 	sceNetConnect(sfd, (SceNetSockaddr *)&serv_addr, sizeof(serv_addr));
@@ -60,7 +62,7 @@ int main (int argc, char *argv[]){
 	char send_buf[BUF_LEN];
 
 	
-	/* Initialiize Controller */
+	/* Initialize Controller */
 	printf("press Select+Start+L+R to stop\n");
 	sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG);
 	SceCtrlData ctrl;
@@ -89,10 +91,10 @@ int main (int argc, char *argv[]){
 		send_buf[2] |= (bool)(ctrl.buttons & SCE_CTRL_SQUARE) << 3;
 		send_buf[2] |= (bool)(ctrl.buttons & SCE_CTRL_START) << 2;
 		send_buf[2] |= (bool)(ctrl.buttons & SCE_CTRL_SELECT) << 1;
-		send_buf[3] = (int)(ctrl.lx/2);
-		send_buf[4] = (int)(ctrl.ly/2);
-		send_buf[5] = (int)(ctrl.rx/2);
-		send_buf[6] = (int)(ctrl.ry/2);
+		send_buf[3] = fix(ctrl.lx/2);
+		send_buf[4] = fix(ctrl.ly/2);
+		send_buf[5] = fix(ctrl.rx/2);
+		send_buf[6] = fix(ctrl.ry/2);
 
 		int sum=0;
 		for(i=1; i<BUF_LEN; i++){
@@ -102,6 +104,7 @@ int main (int argc, char *argv[]){
 
 		send(send_buf);
 		printf("\e[m Stick:[%3i:%3i][%3i:%3i]\r", ctrl.lx,ctrl.ly, ctrl.rx,ctrl.ry);
+		sceKernelDelayThread(2000); //2msec
 	}
 	
 exit:
@@ -124,4 +127,11 @@ exit:
 int send(char *buffer)
 {
 	return sceNetSend(sfd, buffer, BUF_LEN, 0);
+}
+
+int fix(int n){
+	if(n > 127)
+		return 127;
+	else
+		return n; 
 }
